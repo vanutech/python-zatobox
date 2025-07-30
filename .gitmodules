@@ -1,0 +1,3 @@
+[submodule "python_zatobox/protobuff_schemas"]
+	path = python_zatobox/protobuff_schemas
+	url = https://github.com/vanutech/protobuff_schemas.git
