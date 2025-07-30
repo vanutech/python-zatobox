@@ -9,6 +9,7 @@ import struct
 
 from abc import ABC, abstractmethod
 
+import python_zatobox.iotconfig_pb2 as protobuff_obj
 class InputReg(ABC):
     power = 0
     attributes : list
@@ -304,10 +305,6 @@ class Vanubus:
 
 
     def getdata(self, sensorids = []) -> list[InputReg]:
-        if (not(self._is_connected())):
-            connected = self._connect()
-            if (not(connected)):
-                return 
 
         # Create tx_buffer of 64 bytes, initialized with zeros
         tx_buffer = bytearray(64)
@@ -319,9 +316,59 @@ class Vanubus:
         for i in range(len(sensorids)):
             tx_buffer[i + 1] = sensorids[i]  # or clientdata[i].id if objects
 
+        rxdata = self._send_message(tx_buffer, 64)
+
+        return self._decode_rx_buffer(rxdata, 1)
+
+    def request_all_info(self):
+        # Create tx_buffer of 64 bytes, initialized with zeros
+        id_request = bytearray(1)
+        # Set id for request
+        id_request[0] = 4
+
+        # Create a CallBackMessage
+        callback_message = protobuff_obj.CallBackMessage()
+        callback_message.plantid = ""
+        callback_message.callback = "" 
+        callback_message.connectionid = ""
+
+        # Create a FeedBack message
+        feedback = protobuff_obj.FeedBack()
+        feedback.all = True
+
+        # Set the feedback field in the CallBackMessage
+        callback_message.feedback.CopyFrom(feedback)
+
+        # Serialize the message to bytes
+        serialized_message = callback_message.SerializeToString()
+
+
+        tx_buffer = id_request + serialized_message
+        
+        rxdata = self._send_message( tx_buffer, len(tx_buffer))
+
+
+
+        # Deserialize from a string
+        feedbackmessage = protobuff_obj.FeedBackMessage()
+        try:
+            feedbackmessage.ParseFromString(rxdata)
+            return feedbackmessage
+        except Exception as e:
+            print(f"AssertionError: {e}")
+
+        return None
+    
+    def _send_message(self, tx_buffer:bytearray, len) -> bytes:        
+        if (not(self._is_connected())):
+            connected = self._connect()
+            if (not(connected)):
+                return []
+
+
         # Send the buffer minus the last byte (63 bytes)
         try:
-            sent_bytes = self.tcp_socket.send(tx_buffer[:63])
+            sent_bytes = self.tcp_socket.send(tx_buffer)
         except socket.error as e:
             print(f"Socket send error: {e}")
 
@@ -330,7 +377,7 @@ class Vanubus:
             while True:
                 data = self.tcp_socket.recv(1024)
                 if data:
-                    return self._decode_rx_buffer(data, 1)
+                    return data
                 time.sleep(1)
         except Exception as e:
             print(f"Error receiving data: {e}")
@@ -421,18 +468,6 @@ class Vanubus:
         
         return False
 
-
-    def _listen(self):
-        try:
-            while True:
-                data = self.tcp_socket.recv(1024)
-                if not data:
-                    break
-                print(f"Received data: {data.decode('utf-8')}")
-        except Exception as e:
-            print(f"Error receiving data: {e}")
-        finally:
-            self.close()
 
     def _close(self):
         print("Closing socket")

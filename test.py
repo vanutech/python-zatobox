@@ -56,11 +56,15 @@ from python_zatobox.vanubus import Vanubus
 
 
 
-host = "192.168.68.102"  # Replace with the actual IP address of the device
+host = "192.168.68.112"  # Replace with the actual IP address of the device
 client = Vanubus(host)
 
-for i in range(20):
-    sensordata  = client.getdata([1,2,6])
-    time.sleep(2)
+feedbackdata  = client.request_all_info()
 
-    print(sensordata[0].power)
+if len(feedbackdata.sensordata) > 0:
+    listofids = [i.id for i in  feedbackdata.sensordata]
+    for i in range(20):
+        sensordata  = client.getdata(listofids)
+        time.sleep(2)
+
+        print(sensordata[0].power)
