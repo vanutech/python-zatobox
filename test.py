@@ -1,7 +1,7 @@
 
 import time
 
-from python_zatobox.vanubus import Vanubus
+from python_zatobox.vanubus import Vanubus,  InputRegBattery , InputRegMainMeter, InputRegGasMeter, InputRegCharger, InputRegPV, InputRegUsage
 
 # from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
 
@@ -68,13 +68,42 @@ if feedbackdata != None and len(feedbackdata.sensordata) > 0:
     coordinator_data = {f"{devicesn}-{item}":  {"name": "sensor", "id": item} for item in listofids}
 
 
-    for i in range(20):
-        sensordata  = client.getdata(listofids)
+    for i in range(30):
+        sensorsdata  = client.getdata(listofids)
 
-        coordinator_data = {f"{devicesn}-{sensor.id}":  {"power": sensor.power ,"name": "sensor", "id": sensor.id} for sensor in sensordata}
+        coordinator_data = {}
+        for sensor in sensorsdata:
+
+
+            for attribute in sensor.attributes:
+                
+                if (not(attribute.startswith("reserve"))):
+                    value = getattr(sensor, attribute)
+                    coordinator_data[f"{devicesn}-{sensor.id}-{attribute}"] =  {"value": value ,"name": "sensor", "id": sensor.id}
+
+            # match sensor:
+            #     case InputRegMainMeter():        
+                            
+            #         coordinator_data[f"{devicesn}-{sensor.id}-power"] =  {"value": sensor.power ,"name": "sensor", "id": sensor.id}
+            #         coordinator_data[f"{devicesn}-{sensor.id}-power"] =  {"value": sensor ,"name": "sensor", "id": sensor.id}
+
+ 
+            #     case InputRegGasMeter():     
+            #         print("The color is red.")
+            #     case InputRegBattery():     
+            #         print("The color is red.")
+            #     case InputRegPV():     
+            #         print("The color is red.")
+            #     case InputRegCharger():     
+            #         print("The color is red.")
+            #     case InputRegUsage():     
+            #         print("The color is red.")
+        
+        print( coordinator_data)
+
+        coordinator_data = {f"{devicesn}-{sensor.id}":  {"value": sensor.power ,"name": "sensor", "id": sensor.id} for sensor in sensorsdata}
 
 
         print( coordinator_data)
         time.sleep(2)
 
-        print(sensordata[0].power)

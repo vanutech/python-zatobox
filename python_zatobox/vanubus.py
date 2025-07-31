@@ -7,13 +7,19 @@ import time
 
 import struct
 
+from enum import Enum
+
+
 from abc import ABC, abstractmethod
 
 import python_zatobox.iotconfig_pb2 as protobuff_obj
+
+
 class InputReg(ABC):
     id = 0
-    power = 0
-    attributes : list
+    attributes : list[str]
+
+
 
 class InputRegMainMeter(InputReg):
     def __init__(self):
@@ -298,6 +304,7 @@ class Vanubus:
                 print(f"Could not resolve {host}")
         
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.tcp_socket.settimeout(3)  # 5 seconds timeout
 
 
     def setipadress(self, ipadress):
@@ -318,8 +325,10 @@ class Vanubus:
             tx_buffer[i + 1] = sensorids[i]  # or clientdata[i].id if objects
 
         rxdata = self._send_message(tx_buffer, 64)
-
-        return self._decode_rx_buffer(rxdata, 1, sensorids)
+        if len(rxdata) > 0:
+            return self._decode_rx_buffer(rxdata, 1, sensorids)
+        else: 
+            return []
 
     def request_all_info(self):
         # Create tx_buffer of 64 bytes, initialized with zeros
@@ -349,7 +358,10 @@ class Vanubus:
         rxdata = self._send_message( tx_buffer, len(tx_buffer))
 
 
-
+        if len(rxdata) == 0:
+            #error getting message
+            return None
+        
         # Deserialize from a string
         feedbackmessage = protobuff_obj.FeedBackMessage()
         try:
@@ -375,11 +387,10 @@ class Vanubus:
 
 
         try:
-            while True:
-                data = self.tcp_socket.recv(1024)
-                if data:
-                    return data
-                time.sleep(1)
+            data = self.tcp_socket.recv(1024)
+            if data:
+                return data
+            time.sleep(1)
         except Exception as e:
             print(f"Error receiving data: {e}")
 
