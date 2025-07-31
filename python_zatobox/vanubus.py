@@ -11,6 +11,7 @@ from abc import ABC, abstractmethod
 
 import python_zatobox.iotconfig_pb2 as protobuff_obj
 class InputReg(ABC):
+    id = 0
     power = 0
     attributes : list
 
@@ -318,7 +319,7 @@ class Vanubus:
 
         rxdata = self._send_message(tx_buffer, 64)
 
-        return self._decode_rx_buffer(rxdata, 1)
+        return self._decode_rx_buffer(rxdata, 1, sensorids)
 
     def request_all_info(self):
         # Create tx_buffer of 64 bytes, initialized with zeros
@@ -384,7 +385,7 @@ class Vanubus:
 
         return []
 
-    def _decode_rx_buffer(self,  data : bytes, type) -> list:
+    def _decode_rx_buffer(self,  data : bytes, type, sensorids:list) -> list:
         hex_representation = data.hex()
 
         
@@ -395,9 +396,13 @@ class Vanubus:
                 position = 0
                 sensordataelength = (30*4 + 4)
                 sensorlength = (len(data))/(sensordataelength)
+                if (len(sensorids) != sensorlength):
+                    return []
+                
                 for i in range(round(sensorlength)):
+
                     sensorbytes = data[sensordataelength*i:sensordataelength*(i+1)]
-                    sensor = self._sensor_decode(sensorbytes)
+                    sensor = self._sensor_decode(sensorbytes, sensorids[i])
                     
                     sensors.append(sensor)
                 return sensors
@@ -406,7 +411,7 @@ class Vanubus:
 
 
     
-    def _sensor_decode(self, data: bytes):
+    def _sensor_decode(self, data: bytes, sensorid):
     
         # Decode the bytes using little-endian byte order
         decoded_value = int.from_bytes( data[0:4], byteorder='little')
@@ -436,7 +441,7 @@ class Vanubus:
                 input_reg = InputRegCharger()
 
 
-
+        input_reg.id = sensorid
         for i in range(30):
 
             # Decode the bytes using little-endian byte order
