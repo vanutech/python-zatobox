@@ -18,6 +18,7 @@ import python_zatobox.iotconfig_pb2 as protobuff_obj
 class InputReg(ABC):
     id = 0
     attributes : list[str]
+    units : list[str]
 
 
 
@@ -59,6 +60,13 @@ class InputRegMainMeter(InputReg):
             'current_1', 'current_2', 'current_3', 'pf_1', 'pf_2', 'pf_3', 'frequency',
             'reserve1', 'reserve2', 'reserve3', 'reserve4', 'reserve5', 'reserve6', 'reserve7', 
             'reserve8', 'reserve9', 'reserve10', 'reserve11', 
+        ]
+        self.units = [
+            'W', 'kWh', 'kWh', 'W', 'W', 'W',
+            'V', 'V', 'V', 'V', 'V', 'V',
+            'A', 'A', 'A', '', '', '', 'Hz',
+            '', '', '', '', '', '', '', 
+            '', '', '', '', 
         ]
 class InputRegGasMeter(InputReg):
     def __init__(self):
@@ -103,6 +111,15 @@ class InputRegGasMeter(InputReg):
             'reserve26', 'reserve27', 'reserve28', 'reserve29'
         ]
 
+        self.units = [
+            'm3',
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', ''
+        ]
 
 class InputRegPV(InputReg):
     def __init__(self):
@@ -146,7 +163,15 @@ class InputRegPV(InputReg):
             'reserve21', 'reserve22', 'reserve23', 'reserve24', 'reserve25',
             'reserve26', 'reserve27', 'reserve28'
         ]
-
+        self.units = [
+            'W', 'kWh', 
+            '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', ''
+        ]
 
 class InputRegBattery(InputReg):
     def __init__(self):
@@ -189,6 +214,15 @@ class InputRegBattery(InputReg):
             'reserve16', 'reserve17', 'reserve18', 'reserve19', 'reserve20',
             'reserve21', 'reserve22', 'reserve23', 'reserve24', 'reserve25',
             'reserve26'
+        ]
+        self.units = [
+            'W', 'kWh', 'kWh', '%', 
+            '', '',
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', ''
         ]
 
 class InputRegUsage(InputReg):
@@ -234,6 +268,15 @@ class InputRegUsage(InputReg):
             'reserve26', 'reserve27', 'reserve28'
         ]
 
+        self.units = [
+            'W', 'kWh', 
+            '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', ''
+        ]
 class InputRegCharger(InputReg):
     def __init__(self):
         self.power = 0.0
@@ -276,6 +319,15 @@ class InputRegCharger(InputReg):
             'reserve16', 'reserve17', 'reserve18', 'reserve19', 'reserve20',
             'reserve21', 'reserve22', 'reserve23', 'reserve24', 'reserve25',
             'reserve26', 'reserve27'
+        ]
+        self.units = [
+            'W', 'kWh', '%', 
+            '', '', '',
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', ''
         ]
 
 
