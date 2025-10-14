@@ -363,7 +363,21 @@ class Vanubus:
         self.ip_address = ipadress
 
 
+    def sendaction(self, action, actuatorid) -> bool:
 
+        tx_buffer = bytearray(64)
+        tx_buffer[0] = 2
+        tx_buffer[1] = actuatorid & 0xFF
+        tx_buffer[2] = (actuatorid >> 8) & 0xFF
+        tx_buffer[3] = action
+
+        rxdata = self._send_message(tx_buffer, 64)
+        if len(rxdata) > 0:
+            
+            return rxdata[0] == 1
+        else: 
+            return []
+        
     def getdata(self, sensorids = []) -> list[InputReg]:
 
         # Create tx_buffer of 64 bytes, initialized with zeros
