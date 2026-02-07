@@ -7,6 +7,7 @@ import boto3
 import jwt
 from pycognito.aws_srp import AWSSRP
 import requests
+import json
 
 
 
@@ -39,11 +40,30 @@ class ZatoboxCloud:
         plantuserinfo = self.apicall("getuser", user_id)
 
         #olny normal users with one plant
-        if ("succes" in plantuserinfo):
-            self.plantid = plantuserinfo["succes"][0]["plantid"]["S"]
-            return ""
+        if ("succes" in plantuserinfo and len(plantuserinfo["succes"]) > 0):
+            plantuserinfo = plantuserinfo["succes"][0]
+            self.plantid = plantuserinfo["plantid"]["S"]
+
+            
+            plantinfo = self.apicall("getplant", self.plantid)
+            if ("succes" in plantinfo and len(plantinfo["succes"]) > 0):
+                plantinfo = plantinfo["succes"][0]
+
+                params = plantinfo["params"]["S"]
+                json_string = params.replace("'", '"')
+                paramsmap = json.loads(json_string)
+
+                if ("contract" in paramsmap):
+                    contractinfo = paramsmap["contract"]
+                    if ("identifier" in contractinfo):
+                        self.marketpriceidentifier = contractinfo["identifier"]
+                return ""
+            
+            else:
+                return "plant not configured correctly"
         else: 
             return "auth fail"
+
 
 
 
@@ -60,6 +80,9 @@ class ZatoboxCloud:
             if startdate != "" and enddate != "":
                 headers["startdate"] = startdate
                 headers["enddate"] = enddate
+            if startidentifier != "" and endidentifier != "":
+                headers["startidentifier"] = startidentifier
+                headers["endidentifier"] = endidentifier
 
             # Make the GET/POST request (adjust method as needed)
             response = requests.get(API_ENDPOINT, headers=headers)
@@ -98,3 +121,19 @@ class ZatoboxCloud:
         end_epoch = str( int(endtime.timestamp()  ))
 
         return self.apicall("forecast/forecast", self.plantid, startdate=start_epoch, enddate=end_epoch) 
+
+    def getmarketpricedata(self , starttime: datetime, endtime: datetime):
+                
+        startidentifier = self.marketpriceidentifier
+        endidentifier = self.marketpriceidentifier
+        contractinfo = self.apicall("getenergycontracts","vlaanderen", startidentifier=startidentifier, endidentifier=endidentifier)
+        if (not("succes" in contractinfo) or len(contractinfo["succes"]) == 0):
+            return {"error": "contract not setup correctly"}        
+        contractinfo = contractinfo["succes"][0]
+
+        start_epoch =str( int(starttime.timestamp()  ))
+        end_epoch = str( int(endtime.timestamp()  ))
+        if (contractinfo["indexparameter"]):
+            marktid = "BE:SDAC"
+
+        return self.apicall("forecast/marketprice", marktid, startdate=start_epoch, enddate=end_epoch) 
