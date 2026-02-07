@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "python-zatobox"
-version = "0.2.11"
+version = "0.3.2"
 description = ""
 authors = ["woutervanoverberghe <wouter.vanoverberghe@vanutech.be>"]
 readme = "README.md"
@@ -8,8 +8,11 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 protobuf = "^6.31.1"
+boto3 = "^1.42.16"
+pycognito = "^2024.5.1"
 
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
