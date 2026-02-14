@@ -8,7 +8,8 @@ from python_zatobox.zatoboxcloud import ZatoboxCloud
 
 cloud = ZatoboxCloud()
 
-cloud.auth("xxxx", "xxxx", "DEV")
+cloud.auth("test@vanutech.be", "test1234", "DEV")
+
 
 list = cloud.getsensorslist()["succes"]
 
@@ -18,6 +19,9 @@ today = datetime.now()
 
 start_of_yesterday = datetime(year= today.year, month=today.month, day= today.day-5, hour= 0)
 end_of_yesterday = datetime(year= today.year, month=today.month, day= today.day, hour= 0)
+
+marketpricedata = cloud.getmarketpricedata(start_of_yesterday, end_of_yesterday)["succes"]
+usagedata = cloud.getusageforcastdata()["succes"]
 
 data = cloud.getsensordata('1', start_of_yesterday, end_of_yesterday)["succes"]
 

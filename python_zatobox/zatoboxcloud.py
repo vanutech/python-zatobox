@@ -121,7 +121,12 @@ class ZatoboxCloud:
         end_epoch = str( int(endtime.timestamp()  ))
 
         return self.apicall("forecast/forecast", self.plantid, startdate=start_epoch, enddate=end_epoch) 
+    
+    def getusageforcastdata(self):
 
+
+        return self.apicall("forecast/usage", self.plantid, ) 
+    
     def getmarketpricedata(self , starttime: datetime, endtime: datetime):
                 
         startidentifier = self.marketpriceidentifier
