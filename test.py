@@ -56,24 +56,24 @@ from python_zatobox.vanubus import Vanubus,  InputRegBattery , InputRegMainMeter
 
 
 
-host = "192.168.68.109"  # Replace with the actual IP address of the device
+host = "192.168.68.112"  # Replace with the actual IP address of the device
 client = Vanubus(host)
 
 feedbackdata  = client.request_all_info()
 
 if feedbackdata != None and len(feedbackdata.sensordata) > 0:
     listofids = [i.id for i in  feedbackdata.sensordata]
+    listofactids = [i.id for i in  feedbackdata.actuatordata]
 
     devicesn  = "sdfsfdd"
     coordinator_data = {f"{devicesn}-{item}":  {"name": "sensor", "id": item} for item in listofids}
 
 
-    for i in range(30):
+    for i in range(100):
         sensorsdata  = client.getdata(listofids)
 
         coordinator_data = {}
         for sensor in sensorsdata:
-
 
             for attribute in sensor.attributes:
                 
@@ -103,7 +103,10 @@ if feedbackdata != None and len(feedbackdata.sensordata) > 0:
 
         coordinator_data = {f"{devicesn}-{sensor.id}":  {"value": sensor.power ,"name": "sensor", "id": sensor.id} for sensor in sensorsdata}
 
+        
+        sensorsdata  = client.sendaction(1 ,listofactids[0])
 
         print( coordinator_data)
-        time.sleep(2)
+        time.sleep(3)
+        sensorsdata  = client.sendaction(0 ,listofactids[0])
 

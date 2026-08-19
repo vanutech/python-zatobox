@@ -551,7 +551,7 @@ class Vanubus:
         return False
 
 
-    def _close(self):
+    def close(self):
         print("Closing socket")
         self.tcp_socket.close()
 
