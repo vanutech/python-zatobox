@@ -56,7 +56,8 @@ from python_zatobox.vanubus import Vanubus,  InputRegBattery , InputRegMainMeter
 
 
 
-host = "192.168.68.112"  # Replace with the actual IP address of the device
+#host = "0.13.255.0"  # Replace with the actual IP address of the device
+host = "107199336044"
 client = Vanubus(host)
 
 feedbackdata  = client.request_all_info()

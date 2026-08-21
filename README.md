@@ -1,4 +1,13 @@
 
+# Build the package
+
+build the package
+    poetry build
+
+publish the package to python 
+    poetry publish
+
+# How to use the the python package
 
 Example how to use vanubus for a zatobox device with python.
 

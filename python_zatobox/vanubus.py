@@ -8,7 +8,7 @@ import time
 import struct
 
 from enum import Enum
-
+import re
 
 from abc import ABC, abstractmethod
 
@@ -336,17 +336,12 @@ class InputRegCharger(InputReg):
 class Vanubus:
     def __init__(self, host, port=3333) -> None:
         isipadress : bool = False
-        try:
-            socket.inet_aton(host)
-            # legal
-            isipadress = True
-        except socket.error:
-            # Not legal
-            isipadress = False
 
+        isipadress = self.is_valid_ipv4(host)
+
+        self.port = port
         if (isipadress):
             self.ip_address = host
-            self.port = port
         else:
             try:
                 ip = socket.gethostbyname(host)
@@ -358,6 +353,13 @@ class Vanubus:
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.settimeout(3)  # 5 seconds timeout
 
+
+    def is_valid_ipv4(self, ip_str):
+
+        #'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+
+        ipv4_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+        return bool(re.match(ipv4_pattern, ip_str))
 
     def setipadress(self, ipadress):
         self.ip_address = ipadress
