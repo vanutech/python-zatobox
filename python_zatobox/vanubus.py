@@ -12,17 +12,80 @@ import re
 
 from abc import ABC, abstractmethod
 
+
 import python_zatobox.iotconfig_pb2 as protobuff_obj
+
+
+
+class ActuatorData(ABC):
+    id = 0
+
+class ActuatorDataSwitch(ActuatorData):
+    def __init__(self):
+        self.state = False
+
+    def decode_bytes(self, data: bytes) -> None:
+        self.state = bool(data[0])
+
+    def encode_bytes(self) -> bytes:
+        return bytes([int(self.state)])
 
 
 class InputReg(ABC):
     id = 0
     attributes : list[str]
     units : list[str]
+    typeenum = 0
+
+    # Common function for all subclasses
+    def decode_bytes(self, data):
+
+        for i in range(30):
+
+            # Decode the bytes using little-endian byte order
+            decoded_value = int.from_bytes( data[(i)*4:(i+1)*4], byteorder='little')
+
+            # Convert the integer value to a float
+            float_value = struct.unpack('f', struct.pack('I', decoded_value))[0]
+                        
+            setattr(self, self.attributes[i], float_value)
+
+    # Common function for all subclasses
+    def encode_bytes(self) -> bytes:
+
+        buffer = bytearray(4 + (30 * 4))
+
+        buffer[0:4] =   self.typeenum.to_bytes(4, byteorder='little')
+
+        for i in range(30):
+
+            float_value = getattr(self, self.attributes[i])
+
+            # Convert the float back to its raw 32-bit integer representation
+            int_value = struct.unpack('I', struct.pack('f', float_value))[0]
 
 
+            # Encode as little-endian bytes and place at the right offset
+            offset = 4 + i * 4
+            buffer[offset:offset + 4] = int_value.to_bytes(4, byteorder='little')
+
+        return buffer
+
+
+                        
+#   SE_TYPE__mainmeter = 1,
+#   SE_TYPE__gasmeter = 2,
+#   SE_TYPE__pv = 3,
+#   SE_TYPE__battery = 4,
+#   SE_TYPE__usage = 5,
+#   SE_TYPE__charger = 6,
+#   SE_TYPE__forecast = 7,
+#   SE_TYPE__marketprice = 8,
+#   SE_TYPE__usageforecast = 9,
+#   SE_TYPE__smartcontrolopti = 10,
 
 class InputRegMainMeter(InputReg):
+    typeenum = 1
     def __init__(self):
         self.power = 0.0
         self.energy_import = 0.0
@@ -69,6 +132,7 @@ class InputRegMainMeter(InputReg):
             '', '', '', '', 
         ]
 class InputRegGasMeter(InputReg):
+    typeenum = 2
     def __init__(self):
         self.energy = 0.0
         self.reserve1 = 0.0
@@ -122,6 +186,7 @@ class InputRegGasMeter(InputReg):
         ]
 
 class InputRegPV(InputReg):
+    typeenum = 3
     def __init__(self):
         self.power = 0.0
         self.energy = 0.0
@@ -174,6 +239,7 @@ class InputRegPV(InputReg):
         ]
 
 class InputRegBattery(InputReg):
+    typeenum = 4
     def __init__(self):
         self.power = 0.0
         self.energy_charge = 0.0
@@ -226,6 +292,7 @@ class InputRegBattery(InputReg):
         ]
 
 class InputRegUsage(InputReg):
+    typeenum = 5
     def __init__(self):
         self.power = 0.0
         self.energy = 0.0
@@ -278,6 +345,7 @@ class InputRegUsage(InputReg):
             '', '', '', ''
         ]
 class InputRegCharger(InputReg):
+    typeenum = 6
     def __init__(self):
         self.power = 0.0
         self.energy = 0.0
@@ -390,8 +458,12 @@ class Vanubus:
 
         # Fill the buffer with client ids, starting at index 1
         for i in range(len(sensorids)):
-            tx_buffer[i + 1] = sensorids[i]  # or clientdata[i].id if objects
+            sensor_id = sensorids[i]
+            
+            offset = 1 + i * 2
+            tx_buffer[offset :offset + 2] = sensor_id.to_bytes(2, byteorder='little')
 
+        hex_string = tx_buffer.hex()
         rxdata = self._send_message(tx_buffer, 64)
         if len(rxdata) > 0:
             return self._decode_rx_buffer(rxdata, 1, sensorids)
@@ -468,19 +540,24 @@ class Vanubus:
         hex_representation = data.hex()
 
         
-        match type:
+        if data[0] != type:
+            print("error type " + str(data[0]) + " not equal to " + str(type))
+
+
+        match data[0]:
             case 1:
                 sensors = []
                 sensorsearch = True
                 position = 0
                 sensordataelength = (30*4 + 4)
-                sensorlength = (len(data))/(sensordataelength)
+                sensorlength = (len(data) -1 )/(sensordataelength)
                 if (len(sensorids) != sensorlength):
+                    print("error receiving sensor data")
                     return []
                 
                 for i in range(round(sensorlength)):
-
-                    sensorbytes = data[sensordataelength*i:sensordataelength*(i+1)]
+                    
+                    sensorbytes = data[ 1 + sensordataelength*i: 1 + sensordataelength*(i+1)]
                     sensor = self._sensor_decode(sensorbytes, sensorids[i])
                     
                     sensors.append(sensor)
@@ -488,6 +565,7 @@ class Vanubus:
             case 2:
                 return "two"
 
+        return []
 
     
     def _sensor_decode(self, data: bytes, sensorid):
@@ -521,16 +599,16 @@ class Vanubus:
 
 
         input_reg.id = sensorid
-        for i in range(30):
+        input_reg.decode_bytes(data[4:125])
+        # for i in range(30):
 
-            # Decode the bytes using little-endian byte order
-            decoded_value = int.from_bytes( data[(i+1)*4:(i+2)*4], byteorder='little')
+        #     # Decode the bytes using little-endian byte order
+        #     decoded_value = int.from_bytes( data[(i+1)*4:(i+2)*4], byteorder='little')
 
-            # Convert the integer value to a float
-            float_value = struct.unpack('f', struct.pack('I', decoded_value))[0]
+        #     # Convert the integer value to a float
+        #     float_value = struct.unpack('f', struct.pack('I', decoded_value))[0]
                         
-            setattr(input_reg, input_reg.attributes[i], float_value)
-
+        #     setattr(input_reg, input_reg.attributes[i], float_value)
         
         return input_reg
 
