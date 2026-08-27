@@ -448,7 +448,7 @@ class Vanubus:
         else: 
             return []
         
-    def getdata(self, sensorids = []) -> list[InputReg]:
+    def getdata(self, sensorids = []) -> list[InputReg] | str:
 
         # Create tx_buffer of 64 bytes, initialized with zeros
         tx_buffer = bytearray(64)
@@ -468,7 +468,7 @@ class Vanubus:
         if len(rxdata) > 0:
             return self._decode_rx_buffer(rxdata, 1, sensorids)
         else: 
-            return []
+            return "no data received"
 
     def request_all_info(self):
         # Create tx_buffer of 64 bytes, initialized with zeros
@@ -536,12 +536,18 @@ class Vanubus:
 
         return []
 
-    def _decode_rx_buffer(self,  data : bytes, type, sensorids:list) -> list:
+    def _decode_rx_buffer(self,  data : bytes, type, sensorids:list) -> list | str:
+        
         hex_representation = data.hex()
 
-        
-        if data[0] != type:
+        if data[0] == 255:
+            return "function doesn t exist"
+        elif data[0] == 254:
+            return "server internal error"
+
+        elif data[0] != type:
             print("error type " + str(data[0]) + " not equal to " + str(type))
+            return "error type " + str(data[0]) + " not equal to " + str(type)
 
 
         match data[0]:
@@ -553,7 +559,7 @@ class Vanubus:
                 sensorlength = (len(data) -1 )/(sensordataelength)
                 if (len(sensorids) != sensorlength):
                     print("error receiving sensor data")
-                    return []
+                    return "error receiving sensor data"
                 
                 for i in range(round(sensorlength)):
                     
@@ -563,13 +569,16 @@ class Vanubus:
                     sensors.append(sensor)
                 return sensors
             case 2:
-                return "two"
+                return "not implemented"
 
-        return []
+        return "not implemented"
 
     
-    def _sensor_decode(self, data: bytes, sensorid):
-    
+    def _sensor_decode(self, data: bytes, sensorid) -> InputReg | str:
+
+        if  (int.from_bytes(data[0:4], byteorder='little') == 0xFFFFFFFF ):
+            return "sensor doesn't exist"
+        
         # Decode the bytes using little-endian byte order
         decoded_value = int.from_bytes( data[0:4], byteorder='little')
 
@@ -596,20 +605,12 @@ class Vanubus:
                 input_reg = InputRegUsage()
             case 6:
                 input_reg = InputRegCharger()
-
+            case _:
+                return "not supported " + str(decoded_value)
 
         input_reg.id = sensorid
         input_reg.decode_bytes(data[4:125])
-        # for i in range(30):
 
-        #     # Decode the bytes using little-endian byte order
-        #     decoded_value = int.from_bytes( data[(i+1)*4:(i+2)*4], byteorder='little')
-
-        #     # Convert the integer value to a float
-        #     float_value = struct.unpack('f', struct.pack('I', decoded_value))[0]
-                        
-        #     setattr(input_reg, input_reg.attributes[i], float_value)
-        
         return input_reg
 
     def _is_connected(self) -> bool:
